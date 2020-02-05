@@ -72,6 +72,7 @@ struct vteseq_n_struct {
 #"single-shift-g2", VTE_SEQUENCE_HANDLER_NULL
 #"single-shift-g3", VTE_SEQUENCE_HANDLER_NULL
 #"change-font-name", VTE_SEQUENCE_HANDLER_NULL
+"set-clip", VTE_SEQUENCE_HANDLER(vte_sequence_handler_set_clip)
 "cursor-next-line", VTE_SEQUENCE_HANDLER(vte_sequence_handler_cursor_next_line)
 "erase-characters", VTE_SEQUENCE_HANDLER(vte_sequence_handler_erase_characters)
 "erase-in-display", VTE_SEQUENCE_HANDLER(vte_sequence_handler_erase_in_display)

@@ -3258,6 +3258,50 @@ vte_sequence_handler_reset_highlight_foreground_color (VteTerminal *terminal, GV
 	_vte_terminal_set_color_internal(terminal, VTE_HIGHLIGHT_FG, VTE_COLOR_SOURCE_ESCAPE, NULL);
 }
 
+/* Set the clipboard */
+    static void
+vte_sequence_handler_set_clip (VteTerminal *terminal, GValueArray *params)
+{
+    _vte_debug_print (VTE_DEBUG_MISC, "clip handler called!\n");
+
+    GValue *value;
+    char *clip_str;
+    clip_str = NULL;
+
+    // NOTE: Not quite sure what this actually does. 
+    if (params != NULL && params->n_values > 0) {
+        value = g_value_array_get_nth(params, 0);
+
+        if (G_VALUE_HOLDS_POINTER(value)) {
+            clip_str = vte_ucs4_to_utf8 (terminal, (const guchar *)g_value_get_pointer (value));
+        } else if (G_VALUE_HOLDS_STRING(value)) {
+            /* Copy the string into the buffer. */
+            clip_str = g_value_dup_string(value);
+        }
+    }
+
+    // Check the str length, and ensure that its at least 3 (the c; part)
+    {
+        int len = strlen(clip_str);
+        if (len < 3) {
+            _vte_debug_print (VTE_DEBUG_MISC, "Something has gone wrong...\n");
+            return;
+        }
+    }
+    
+    // Skip the c; part
+    clip_str = &clip_str[2];
+    gsize len;
+    g_base64_decode_inplace(clip_str, &len);
+
+    // FIXME make sure str is nul terminated
+    _vte_debug_print (VTE_DEBUG_MISC,
+            "my str is '%s'\n", clip_str);
+
+    // Dump the str into the clipboard
+    GtkClipboard *clipboard = terminal->pvt->clipboard[VTE_SELECTION_CLIPBOARD];
+    gtk_clipboard_set_text (clipboard, clip_str, len);
+}
 
 /* Lookup tables */
 
@@ -3299,7 +3343,12 @@ _vte_terminal_handle_sequence(VteTerminal *terminal,
 	handler = _vte_sequence_get_handler (match);
 
 	if (handler != NULL) {
-		/* Let the handler handle it. */
+        // Print the handler control seq name
+		_vte_debug_print (VTE_DEBUG_MISC,
+				  "FOUND: handler for control sequence `%s' defined.\n",
+				  match);
+		
+        /* Let the handler handle it. */
 		handler (terminal, params);
 	} else {
 		_vte_debug_print (VTE_DEBUG_MISC,
